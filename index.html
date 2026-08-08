@@ -1,1 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   MEDICARE — DESIGN TOKENS
+   Signature: capsule buttons w/ visible center seam (medicine
+   capsule motif) + pulse-line dividers (heartbeat/vital motif).
+   ============================================================ */
+:root{
+  --ink:#0E2E29;
+  --bg:#F1F6F0;
+  --surface:#FFFFFF;
+  --surface-alt:#EEF6F0;
+  --teal:#145C54;
+  --teal-light:#1F7A6C;
+  --teal-pale:#E3F1EC;
+  --coral:#FF6A4D;
+  --coral-dark:#E4512F;
+  --coral-pale:#FFE7E0;
+  --gold:#E4A73B;
+  --gold-pale:#FBEDD1;
+  --green:#2FA84F;
+  --green-pale:#E3F5E7;
+  --red:#D64545;
+  --red-pale:#FCE7E5;
+  --line:#DEE7E0;
+  --muted:#65786F;
+  --font-display:'Fraunces',serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --radius-card:20px;
+  --radius-capsule:999px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+a{color:inherit;}
+
+/* ---------- backdrop ambience ---------- */
+.stage{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 16px;
+  position:relative;
+  overflow:hidden;
+}
+.stage::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(20,92,84,0.10), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(255,106,77,0.10), transparent 45%);
+  pointer-events:none;
+}
+.stage-label{
+  position:fixed;
+  top:18px;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  z-index:5;
+  opacity:.75;
+}
+
+/* ---------- phone frame ---------- */
+.phone{
+  width:390px;
+  max-width:100%;
+  height:844px;
+  max-height:92vh;
+  background:var(--ink);
+  border-radius:46px;
+  padding:14px;
+  box-shadow:0 30px 70px -20px rgba(14,46,41,0.45), 0 0 0 1px rgba(14,46,41,0.06);
+  position:relative;
+  z-index:2;
+}
+.phone::before{
+  content:"";
+  position:absolute;
+  top:14px; left:50%; transform:translateX(-50%);
+  width:120px; height:26px;
+  background:var(--ink);
+  border-radius:0 0 18px 18px;
+  z-index:20;
+}
+.screen{
+  width:100%;height:100%;
+  background:var(--surface);
+  border-radius:34px;
+  overflow:hidden;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+}
+.screen-scroll{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -ms-overflow-style:none;
+  scrollbar-width:none;
+}
+.screen-scroll::-webkit-scrollbar{display:none;}
+
+@media (max-width:460px){
+  .stage{padding:0;}
+  .phone{
+    width:100vw;height:100vh;max-height:100vh;border-radius:0;padding:0;box-shadow:none;
+  }
+  .phone::before{display:none;}
+  .screen{border-radius:0;}
+}
+
+/* ---------- typography ---------- */
+.h-display{
+  font-family:var(--font-display);
+  font-weight:600;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--teal-light);
+}
+.muted{color:var(--muted);}
+.mono{font-family:var(--font-mono);}
+
+/* ---------- pulse divider (signature) ---------- */
+.pulse-divider{
+  width:100%;
+  height:22px;
+  margin:2px 0;
+  opacity:.55;
+}
+.pulse-divider svg{width:100%;height:100%;display:block;}
+.pulse-divider path{
+  fill:none;
+  stroke:var(--teal-light);
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border:none;
+  border-radius:var(--radius-capsule);
+  padding:15px 22px;
+  font-size:15px;
+  font-weight:700;
+  width:100%;
+  transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  position:relative;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{
+  background:linear-gradient(180deg, var(--coral), var(--coral-dark));
+  color:#fff;
+  box-shadow:0 10px 22px -8px rgba(228,81,47,0.55);
+}
+/* capsule seam motif */
+.btn-primary::after, .btn-secondary::after{
+  content:"";
+  position:absolute;
+  left:50%; top:20%; bottom:20%;
+  width:1px;
+  background:rgba(255,255,255,0.35);
+}
+.btn-secondary{
+  background:var(--surface);
+  color:var(--teal);
+  border:1.5px solid var(--teal);
+}
+.btn-secondary::after{background:rgba(20,92,84,0.18);}
+.btn-ghost{
+  background:transparent;
+  color:var(--teal);
+  font-weight:600;
+  width:auto;
+  padding:8px 4px;
+}
+.btn-ghost::after{display:none;}
+.btn-sm{padding:10px 16px;font-size:13px;}
+.btn-block-row{display:flex;gap:10px;}
+.btn:disabled{opacity:.45;pointer-events:none;}
+
+/* ---------- top bar / nav ---------- */
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:18px 20px 14px;
+  border-bottom:1px solid var(--line);
+  background:var(--surface);
+  flex-shrink:0;
+}
+.topbar .back{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--surface-alt);
+  display:flex;align-items:center;justify-content:center;
+  border:none;flex-shrink:0;
+}
+.topbar h1{font-size:17px;margin:0;font-family:var(--font-body);font-weight:700;flex:1;}
+.topbar .sub{font-size:12px;color:var(--muted);margin-top:1px;}
+
+.bottomnav{
+  display:flex;
+  border-top:1px solid var(--line);
+  background:var(--surface);
+  flex-shrink:0;
+  padding:10px 6px 14px;
+}
+.bottomnav button{
+  flex:1;background:none;border:none;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--muted);font-size:10.5px;font-weight:600;padding:4px;
+}
+.bottomnav button.active{color:var(--teal);}
+.bottomnav svg{width:21px;height:21px;}
+
+/* ---------- generic layout helpers ---------- */
+.pad{padding:18px 20px;}
+.section{padding:6px 20px 18px;}
+.row{display:flex;align-items:center;gap:12px;}
+.col{display:flex;flex-direction:column;}
+.gap8{gap:8px;} .gap10{gap:10px;} .gap14{gap:14px;} .gap6{gap:6px;}
+.space-between{justify-content:space-between;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-card);
+  padding:16px;
+}
+.card-alt{background:var(--surface-alt);border-color:transparent;}
+.card-tap{transition:transform .12s ease, box-shadow .12s ease;}
+.card-tap:active{transform:scale(.98);}
+
+.avatar{
+  width:52px;height:52px;border-radius:16px;
+  background:var(--teal-pale);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--teal);
+  flex-shrink:0;
+}
+.avatar.round{border-radius:50%;}
+.avatar.sm{width:40px;height:40px;font-size:15px;border-radius:12px;}
+
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:var(--radius-capsule);
+  font-size:10.5px;font-weight:700;
+}
+.badge-green{background:var(--green-pale);color:var(--green);}
+.badge-gold{background:var(--gold-pale);color:#96731D;}
+.badge-red{background:var(--red-pale);color:var(--red);}
+.badge-teal{background:var(--teal-pale);color:var(--teal);}
+.badge-coral{background:var(--coral-pale);color:var(--coral-dark);}
+
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.dot-green{background:var(--green);}
+.dot-red{background:var(--red);}
+.dot-gold{background:var(--gold);}
+
+.field{margin-bottom:14px;}
+.field label{
+  display:block;font-size:12px;font-weight:700;color:var(--teal);
+  margin-bottom:6px;letter-spacing:.02em;
+}
+.field input, .field select, .field textarea{
+  width:100%;padding:13px 14px;border-radius:14px;
+  border:1.5px solid var(--line);background:var(--surface-alt);
+  font-size:14.5px;color:var(--ink);outline:none;
+  transition:border-color .15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--teal-light);}
+.field-hint{font-size:11px;color:var(--muted);margin-top:5px;}
+
+.searchbar{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface-alt);border:1.5px solid var(--line);
+  border-radius:var(--radius-capsule);padding:12px 16px;
+}
+.searchbar input{border:none;background:none;outline:none;flex:1;font-size:14px;color:var(--ink);}
+
+.stars{color:var(--gold);font-size:12px;letter-spacing:1px;}
+
+.upload-box{
+  border:1.6px dashed var(--teal-light);
+  border-radius:16px;background:var(--teal-pale);
+  padding:16px;text-align:center;color:var(--teal);
+  font-size:12.5px;font-weight:600;
+}
+.upload-box.done{border-style:solid;border-color:var(--green);background:var(--green-pale);color:#1E7A38;}
+
+.stepper{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.stepper .seg{flex:1;height:4px;border-radius:2px;background:var(--line);}
+.stepper .seg.on{background:var(--teal);}
+
+.toast{
+  position:absolute;left:16px;right:16px;bottom:96px;
+  background:var(--ink);color:#fff;padding:13px 16px;border-radius:16px;
+  font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;
+  box-shadow:0 14px 30px -10px rgba(0,0,0,.4);
+  z-index:80;
+  animation:toastin .25s ease;
+}
+@keyframes toastin{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+.empty{
+  text-align:center;padding:40px 20px;color:var(--muted);
+}
+
+/* ---------- floating AI assistant ---------- */
+.ai-fab{
+  position:absolute;right:16px;bottom:88px;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(160deg,var(--teal),var(--teal-light));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 12px 24px -8px rgba(20,92,84,0.55);
+  border:none;z-index:60;
+  animation:fabpulse 2.6s ease infinite;
+}
+.ai-fab svg{width:24px;height:24px;}
+@keyframes fabpulse{
+  0%,100%{box-shadow:0 12px 24px -8px rgba(20,92,84,0.55);}
+  50%{box-shadow:0 12px 30px -6px rgba(20,92,84,0.75);}
+}
+.ai-fab.no-nav{bottom:24px;}
+
+.ai-overlay{
+  position:absolute;inset:0;z-index:100;
+  background:rgba(14,46,41,0.35);
+  display:flex;align-items:flex-end;
+}
+.ai-sheet{
+  width:100%;max-height:82%;background:var(--surface);
+  border-radius:26px 26px 0 0;display:flex;flex-direction:column;
+  animation:sheetup .28s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes sheetup{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.ai-head{
+  padding:16px 18px 12px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;
+}
+.ai-head .grabber{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:38px;height:4px;border-radius:2px;background:var(--line);
+}
+.ai-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+.ai-msg{max-width:84%;padding:11px 14px;border-radius:16px;font-size:13.5px;line-height:1.45;}
+.ai-msg.bot{background:var(--surface-alt);border-bottom-left-radius:4px;align-self:flex-start;}
+.ai-msg.user{background:var(--teal);color:#fff;border-bottom-right-radius:4px;align-self:flex-end;}
+.ai-msg.bot .disclaimer{display:block;margin-top:8px;font-size:10.5px;color:var(--muted);font-style:italic;}
+.ai-quick{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 12px;}
+.ai-quick button{
+  border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-capsule);
+  padding:8px 13px;font-size:12px;font-weight:600;color:var(--teal);
+}
+.ai-input-row{
+  display:flex;gap:8px;padding:12px 14px 18px;border-top:1px solid var(--line);align-items:center;
+}
+.ai-input-row input{
+  flex:1;border:1.5px solid var(--line);background:var(--surface-alt);
+  border-radius:var(--radius-capsule);padding:11px 16px;font-size:13.5px;outline:none;
+}
+.ai-icon-btn{
+  width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ai-icon-btn.send{background:var(--coral);border:none;color:#fff;}
+.ai-icon-btn svg{width:18px;height:18px;}
+
+/* utility */
+.icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;}
+.center{text-align:center;}
+.mt6{margin-top:6px;}.mt10{margin-top:10px;}.mt14{margin-top:14px;}.mt18{margin-top:18px;}.mt24{margin-top:24px;}
+.mb10{margin-bottom:10px;}.mb14{margin-bottom:14px;}.mb18{margin-bottom:18px;}
+.fade-in{animation:fadein .28s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<div class="stage-label">MediCare — clickable prototype</div>
+<div class="stage">
+  <div class="phone">
+    <div class="screen" id="screen"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ICONS — minimal line-icon set
+   ============================================================ */
+const ic = {
+  back:`<svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>`,
+  bell:`<svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>`,
+  home:`<svg class="icon" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`,
+  cal:`<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>`,
+  user:`<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4.5 5-6 8-6s6.5 1.5 8 6"/></svg>`,
+  grid:`<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
+  pill:`<svg class="icon" viewBox="0 0 24 24"><rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M8.5 8.5l7 7" transform="rotate(-45 12 12)"/></svg>`,
+  map:`<svg class="icon" viewBox="0 0 24 24"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>`,
+  briefcase:`<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`,
+  star:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3 6.5 7 .9-5.2 4.7 1.4 6.9L12 17.7 5.8 21l1.4-6.9L2 9.4l7-.9z"/></svg>`,
+  mic:`<svg class="icon" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg>`,
+  camera:`<svg class="icon" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.4"/></svg>`,
+  upload:`<svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>`,
+  send:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 12l18-8-8 18-2.5-7L3 12z"/></svg>`,
+  close:`<svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+  check:`<svg class="icon" viewBox="0 0 24 24"><path d="M4 12l6 6L20 6"/></svg>`,
+  chevR:`<svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M9 6l6 6-6 6"/></svg>`,
+  video:`<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="M16 10l6-3.5v11L16 14"/></svg>`,
+  phoneCall:`<svg class="icon" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>`,
+  chat:`<svg class="icon" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 01-12.4 7.6L3 21l1.9-5.6A8.5 8.5 0 1121 11.5z"/></svg>`,
+  ambulance:`<svg class="icon" viewBox="0 0 24 24"><rect x="1" y="9" width="14" height="8" rx="1.5"/><path d="M15 12h4l3 3v2h-7z"/><path d="M6 13h4M8 11v4"/><circle cx="5.5" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>`,
+  bolt:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>`,
+  file:`<svg class="icon" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>`,
+  logout:`<svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>`,
+  toggle:`<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="5"/><circle cx="16" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg>`,
+  history:`<svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-7 3.5"/><path d="M3 3v5h5M12 7v5l4 2"/></svg>`,
+  settings:`<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1h.1a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>`,
+  support:`<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.5 2.5 0 014.9.8c0 1.7-2.4 2-2.4 3.5M12 17.2h.01"/></svg>`,
+  headset:`<svg class="icon" viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0116 0v1"/><rect x="2.5" y="13" width="5" height="7" rx="2"/><rect x="16.5" y="13" width="5" height="7" rx="2"/><path d="M20 20a4 4 0 01-4 3h-2"/></svg>`,
+};
+
+function pulseDivider(){
+  return `<div class="pulse-divider"><svg viewBox="0 0 400 22" preserveAspectRatio="none"><path d="M0 11 H150 L165 2 L180 20 L195 4 L208 11 H400"/></svg></div>`;
+}
+
+/* ============================================================
+   MOCK DATA
+   ============================================================ */
+const ROLES = [
+  {id:'patient', label:'Patient', icon:ic.user, docs:false},
+  {id:'doctor', label:'Doctor', icon:ic.briefcase, docs:true},
+  {id:'nurse', label:'Nurse', icon:ic.pill, docs:true},
+  {id:'homenurse', label:'Home Nurse', icon:ic.home, docs:true},
+  {id:'physio', label:'Physiotherapist', icon:ic.bolt, docs:true},
+  {id:'caretaker', label:'Caretaker', icon:ic.user, docs:true},
+  {id:'bloodtech', label:'Blood Test Technician', icon:ic.file, docs:true},
+  {id:'ambulance', label:'Ambulance Driver', icon:ic.ambulance, docs:true},
+  {id:'pharmacy', label:'Pharmacy', icon:ic.pill, docs:'pharmacy'},
+];
+
+const SPECIALTIES = [
+  {id:'gp', name:'General Physician', n:14},
+  {id:'ped', name:'Pediatrician', n:9},
+  {id:'derm', name:'Dermatologist', n:7},
+  {id:'cardio', name:'Cardiologist', n:6},
+  {id:'gyno', name:'Gynecologist', n:8},
+  {id:'ortho', name:'Orthopedic', n:5},
+  {id:'ent', name:'ENT Specialist', n:6},
+  {id:'psych', name:'Psychiatrist', n:4},
+];
+
+function genDoctors(specialty){
+  const names=['Dr. Ananya Rao','Dr. Karthik Menon','Dr. Fathima Beevi','Dr. Sanjay Iyer','Dr. Meera Nair'];
+  return names.map((name,i)=>({
+    id:specialty+'-'+i,
+    name, specialty,
+    exp: 4+i*3,
+    fee: 300+i*150,
+    rating: (4.2+i*0.15).toFixed(1),
+    reviews: 40+i*37,
+    verified:true,
+    status: i%3===0?'Busy': (i%4===0?'Offline':'Available'),
+  }));
+}
+
+const NEARBY_CATEGORIES = [
+  {id:'pharmacy', label:'Pharmacy', icon:ic.pill},
+  {id:'hospital', label:'Hospital', icon:ic.map},
+  {id:'lab', label:'Diagnostic Laboratory', icon:ic.file},
+];
+
+function genPlaces(cat){
+  const sets = {
+    pharmacy:['GreenLeaf Pharmacy','CityCare Chemists','Wellness Plus Pharmacy'],
+    hospital:['St. Alphonsa Hospital','Sunrise Multispecialty','Lakeside General Hospital'],
+    lab:['MedPath Diagnostics','Bright Labs','Accura Diagnostic Centre'],
+  };
+  return sets[cat].map((name,i)=>({
+    id:cat+'-'+i, name, cat,
+    distance:(0.6+i*0.9).toFixed(1)+' km',
+    rating:(4.0+i*0.3).toFixed(1),
+    hours: i%2===0 ? 'Open · Closes 10 PM' : 'Open 24 hours',
+    address: (12+i)+' MG Road, Palakkad',
+  }));
+}
+
+const MEDICINES = [
+  {id:'m1', name:'Paracetamol 500mg', available:true, rx:false, price:35},
+  {id:'m2', name:'Amoxicillin 250mg', available:true, rx:true, price:89},
+  {id:'m3', name:'Cetirizine 10mg', available:true, rx:false, price:28},
+  {id:'m4', name:'Azithromycin 500mg', available:false, rx:true, price:145},
+  {id:'m5', name:'Ibuprofen 400mg', available:true, rx:false, price:42},
+];
+
+const SERVICE_CATEGORIES = [
+  {id:'nurse', label:'Nurse', icon:ic.pill},
+  {id:'homenurse', label:'Home Nurse', icon:ic.home},
+  {id:'physio', label:'Physiotherapist', icon:ic.bolt},
+  {id:'caretaker', label:'Caretaker', icon:ic.user},
+  {id:'bloodtest', label:'Blood Test', icon:ic.file},
+  {id:'checkup', label:'Medical Check-up', icon:ic.briefcase},
+  {id:'ambulance', label:'Ambulance', icon:ic.ambulance},
+];
+
+function genPros(cat){
+  const names=['Sunitha Varma','Rajeev Pillai','Anoop Das','Divya Krishnan'];
+  return names.map((name,i)=>({
+    id:cat+'-p'+i, name, cat,
+    exp:2+i*2, rating:(4.1+i*0.2).toFixed(1), reviews:18+i*11,
+    verified:true, available: i!==2,
+  }));
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const S = {
+  hist:[],
+  user:{name:'Sona', role:'patient'},
+  registerRole:null,
+  docsUploaded:false,
+  specialty:null,
+  doctorId:null,
+  consultMode:null,
+  nearbyCat:null,
+  placeId:null,
+  medQuery:'',
+  cart:[],
+  delivery:null,
+  rxChecked:false,
+  rxUploaded:false,
+  serviceCat:null,
+  proId:null,
+  notifications:[
+    {id:1,title:'Welcome to MediCare',body:'Your account is ready to go.',time:'Just now'},
+  ],
+  proAvailable:true,
+  appts:[
+    {id:'a1',patient:'Ramesh Kutty',time:'10:30 AM',reason:'Fever & cough',status:'pending'},
+    {id:'a2',patient:'Latha Menon',time:'11:15 AM',reason:'Follow-up',status:'pending'},
+    {id:'a3',patient:'Vinod Nair',time:'Yesterday',reason:'Skin rash',status:'completed'},
+  ],
+  activeApptId:null,
+  orders:[
+    {id:'o1',customer:'Priya S.',items:['Paracetamol 500mg x2','Cetirizine 10mg x1'],status:'new'},
+    {id:'o2',customer:'Arjun T.',items:['Amoxicillin 250mg x1'],status:'preparing'},
+    {id:'o3',customer:'Deepa R.',items:['Ibuprofen 400mg x1'],status:'delivered'},
+  ],
+  activeOrderId:null,
+  aiMessages:[],
+  aiVoice:false,
+  toastTimer:null,
+};
+
+/* ============================================================
+   SHARED COMPONENTS
+   ============================================================ */
+function topbar(title, sub, showBack=true, right=''){
+  return `<div class="topbar">
+    ${showBack?`<button class="back" onclick="goBack()">${ic.back}</button>`:''}
+    <div><h1>${title}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div>
+    <div style="margin-left:auto">${right}</div>
+  </div>`;
+}
+
+function bottomNav(role, active){
+  const sets = {
+    patient:[
+      {id:'home', label:'Home', icon:ic.home, go:()=>goRoot('patientHome')},
+      {id:'services', label:'Services', icon:ic.grid, go:()=>goRoot('servicesCategory')},
+      {id:'profile', label:'Profile', icon:ic.user, go:()=>goRoot('profile')},
+    ],
+    professional:[
+      {id:'home', label:'Home', icon:ic.home, go:()=>goRoot('proDashboard')},
+      {id:'appts', label:'Appointments', icon:ic.cal, go:()=>goRoot('proAppointments')},
+      {id:'profile', label:'Profile', icon:ic.user, go:()=>goRoot('proProfile')},
+    ],
+    pharmacy:[
+      {id:'home', label:'Home', icon:ic.home, go:()=>goRoot('pharmDashboard')},
+      {id:'orders', label:'Orders', icon:ic.file, go:()=>goRoot('pharmOrders')},
+      {id:'profile', label:'Profile', icon:ic.user, go:()=>goRoot('pharmProfile')},
+    ],
+  };
+  const items = sets[role];
+  window.__navFns = window.__navFns || {};
+  return `<div class="bottomnav">
+    ${items.map((it,i)=>{
+      const key = role+'_'+it.id;
+      window.__navFns[key]=it.go;
+      return `<button class="${active===it.id?'active':''}" onclick="window.__navFns['${key}']()">${it.icon}<span>${it.label}</span></button>`;
+    }).join('')}
+  </div>`;
+}
+
+function withNav(bodyHtml, role, active, opts={}){
+  const showFab = opts.fab!==false;
+  return `<div class="screen-scroll">${bodyHtml}</div>
+    ${showFab?`<button class="ai-fab" onclick="openAI()">${ic.chat}</button>`:''}
+    ${bottomNav(role, active)}`;
+}
+function withoutNav(bodyHtml, opts={}){
+  const showFab = opts.fab!==false;
+  return `<div class="screen-scroll">${bodyHtml}</div>
+    ${showFab?`<button class="ai-fab no-nav" onclick="openAI()">${ic.chat}</button>`:''}`;
+}
+
+/* ---------- AI assistant ---------- */
+const MED_KB = {
+  'paracetamol':{use:'Reduces fever and relieves mild to moderate pain.',dose:'Adults: 500–1000mg every 4–6 hours, max 4g/day.',side:'Generally well tolerated; rare liver strain at high doses.',food:'Can be taken with or without food.',interact:'Avoid combining with other paracetamol-containing products.'},
+  'ibuprofen':{use:'Anti-inflammatory pain reliever, also reduces fever.',dose:'Adults: 200–400mg every 6–8 hours with food.',side:'May cause stomach upset; avoid on empty stomach.',food:'Take with food or milk to reduce irritation.',interact:'Avoid with blood thinners or other NSAIDs.'},
+  'amoxicillin':{use:'Antibiotic for bacterial infections.',dose:'Typically 250–500mg every 8 hours, as prescribed.',side:'May cause mild nausea or diarrhoea.',food:'Can be taken with or without food.',interact:'Inform your doctor of any penicillin allergy.'},
+  'cetirizine':{use:'Antihistamine for allergy relief — sneezing, itching, hives.',dose:'Adults: 10mg once daily.',side:'Mild drowsiness in some people.',food:'No food restrictions.',interact:'Avoid combining with other sedating antihistamines.'},
+  'azithromycin':{use:'Antibiotic used for respiratory and skin infections.',dose:'Commonly 500mg on day 1, then 250mg daily — follow prescription.',side:'May cause mild stomach discomfort.',food:'Best taken on an empty stomach unless advised otherwise.',interact:'Space apart from antacids by 2 hours.'},
+};
+function aiLookup(text){
+  const q = text.toLowerCase();
+  const key = Object.keys(MED_KB).find(k=>q.includes(k));
+  if(key){
+    const m = MED_KB[key];
+    return `<b>${key[0].toUpperCase()+key.slice(1)}</b><br>
+      • <b>Usage:</b> ${m.use}<br>
+      • <b>Dosage:</b> ${m.dose}<br>
+      • <b>Side effects:</b> ${m.side}<br>
+      • <b>Food:</b> ${m.food}<br>
+      • <b>Interactions:</b> ${m.interact}
+      <span class="disclaimer">This is general information, not a substitute for professional medical advice.</span>`;
+  }
+  return `I couldn't find that exact medicine in my demo library yet — try "Paracetamol", "Ibuprofen", "Amoxicillin", "Cetirizine" or "Azithromycin". You can also upload a photo of the label or prescription and I'll do my best to identify it.
+  <span class="disclaimer">This is general information, not a substitute for professional medical advice.</span>`;
+}
+function openAI(){
+  S.aiOpenState = true;
+  if(S.aiMessages.length===0){
+    S.aiMessages.push({from:'bot', html:`Hi, I'm your MediCare AI Assistant 👋 Ask me about a medicine, or upload a photo of a prescription or label.`});
+  }
+  rerenderOverlay();
+}
+function closeAI(){ S.aiOpenState=false; rerenderOverlay(); }
+function rerenderOverlay(){
+  const existing = document.getElementById('ai-overlay-slot');
+  if(existing) existing.outerHTML = aiOverlayHtml();
+}
+function aiOverlayHtml(){
+  if(!S.aiOpenState) return `<div id="ai-overlay-slot"></div>`;
+  return `<div id="ai-overlay-slot"><div class="ai-overlay" onclick="if(event.target===this)closeAI()">
+    <div class="ai-sheet">
+      <div class="ai-head">
+        <div class="grabber"></div>
+        <div class="avatar sm" style="background:var(--teal-pale)">${ic.chat}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14.5px">AI Assistant</div>
+          <div class="sub muted" style="font-size:11.5px">Medicine & prescription info</div>
+        </div>
+        <button class="back" onclick="closeAI()">${ic.close}</button>
+      </div>
+      <div class="ai-body" id="ai-body">
+        ${S.aiMessages.map(m=>`<div class="ai-msg ${m.from}">${m.html}</div>`).join('')}
+      </div>
+      <div class="ai-quick">
+        <button onclick="aiUpload('prescription')">${ic.file} Upload prescription</button>
+        <button onclick="aiUpload('label')">${ic.camera} Scan label</button>
+        <button onclick="aiVoiceToggle()">${ic.mic} ${S.aiVoice?'Listening…':'Voice'}</button>
+      </div>
+      <div class="ai-input-row">
+        <button class="ai-icon-btn" onclick="aiUpload('photo')">${ic.upload}</button>
+        <input id="ai-text-input" placeholder="Type a medicine name…" onkeydown="if(event.key==='Enter')aiSend()">
+        <button class="ai-icon-btn send" onclick="aiSend()">${ic.send}</button>
+      </div>
+    </div>
+  </div></div>`;
+}
+function aiSend(){
+  const input = document.getElementById('ai-text-input');
+  const val = input.value.trim();
+  if(!val) return;
+  S.aiMessages.push({from:'user', html: val});
+  S.aiMessages.push({from:'bot', html: aiLookup(val)});
+  rerenderOverlay();
+  setTimeout(()=>{const b=document.getElementById('ai-body'); if(b)b.scrollTop=b.scrollHeight;},30);
+}
+function aiUpload(kind){
+  const labels = {prescription:'📄 Prescription photo uploaded', label:'📷 Medicine label scanned', photo:'📷 Photo uploaded'};
+  S.aiMessages.push({from:'user', html: labels[kind]});
+  const responses = {
+    prescription:`I can see a prescription for <b>Amoxicillin 250mg</b>, twice daily for 5 days. Would you like details on usage or interactions?`,
+    label:`This looks like <b>Cetirizine 10mg</b>. Ask me for dosage, side effects, or interactions any time.`,
+    photo:`Got it — this looks like <b>Paracetamol 500mg</b>. Want the usage details?`,
+  };
+  S.aiMessages.push({from:'bot', html: responses[kind] + `<span class="disclaimer">This is general information, not a substitute for professional medical advice.</span>`});
+  rerenderOverlay();
+}
+function aiVoiceToggle(){
+  S.aiVoice = !S.aiVoice;
+  if(S.aiVoice){
+    S.aiMessages.push({from:'user', html:'🎙️ (voice input) "What is paracetamol used for?"'});
+    S.aiMessages.push({from:'bot', html: aiLookup('paracetamol')});
+    setTimeout(()=>{S.aiVoice=false; rerenderOverlay();}, 1400);
+  }
+  rerenderOverlay();
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+function go(screen, params){
+  S.hist.push({screen, params: params||{}});
+  render();
+}
+function goReplace(screen, params){
+  S.hist[S.hist.length-1] = {screen, params: params||{}};
+  render();
+}
+function goBack(){
+  if(S.hist.length>1){ S.hist.pop(); render(); }
+}
+function goRoot(screen, params){
+  S.hist = [{screen, params: params||{}}];
+  render();
+}
+function current(){ return S.hist[S.hist.length-1]; }
+
+function showToast(msg){
+  const el = document.getElementById('screen');
+  const t = document.createElement('div');
+  t.className='toast';
+  t.innerHTML = `<span style="color:#7FE0A0">${ic.check}</span> ${msg}`;
+  el.appendChild(t);
+  clearTimeout(S.toastTimer);
+  S.toastTimer = setTimeout(()=>t.remove(), 2600);
+}
+function pushNotification(title, body){
+  S.notifications.unshift({id:Date.now(), title, body, time:'Just now'});
+}
+
+function render(){
+  const {screen, params} = current();
+  const fn = SCREENS[screen];
+  const html = fn ? fn(params) : `<div class="pad">Screen not found: ${screen}</div>`;
+  document.getElementById('screen').innerHTML = html + aiOverlayHtml();
+  if(screen==='splash'){
+    setTimeout(()=>{ if(current().screen==='splash') goRoot('welcome'); }, 1400);
+  }
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+const SCREENS = {};
+
+/* ============================================================
+   PROFILE (patient)
+   ============================================================ */
+function profileRow(icon,label,sub,onclick){
+  return `<div class="card card-tap row gap12" onclick="${onclick}">
+    <div class="avatar sm">${icon}</div>
+    <div style="flex:1"><div style="font-weight:700;font-size:13.5px;">${label}</div>${sub?`<div class="muted" style="font-size:11px;margin-top:2px;">${sub}</div>`:''}</div>
+    ${ic.chevR}
+  </div>`;
+}
+SCREENS.profile = () => {
+  const body = `
+    <div class="pad center" style="padding-bottom:8px;">
+      <div class="avatar round" style="width:74px;height:74px;font-size:26px;margin:0 auto;">${S.user.name[0]}</div>
+      <div class="h-display mt10" style="font-size:19px;">${S.user.name}</div>
+      <div class="muted" style="font-size:12.5px;">Patient account</div>
+    </div>
+    <div class="section col gap10">
+      ${profileRow(ic.user,'Personal information','Name, contact, address',`go('personalInfo')`)}
+      ${profileRow(ic.cal,'Appointment History','2 upcoming, 5 past',`go('historyList',{kind:'appointments'})`)}
+      ${profileRow(ic.pill,'Medicine Orders','3 orders this month',`go('historyList',{kind:'orders'})`)}
+      ${profileRow(ic.grid,'Service History','1 completed service',`go('historyList',{kind:'services'})`)}
+      ${profileRow(ic.file,'Saved Prescriptions','4 saved',`go('historyList',{kind:'prescriptions'})`)}
+      ${profileRow(ic.bell,'Notification History', S.notifications.length+' notifications',`go('notificationHistory')`)}
+      ${profileRow(ic.settings,'Settings','Privacy, preferences',`go('settingsScreen')`)}
+      ${profileRow(ic.headset,'Customer Support','Chat with our team',`go('supportScreen')`)}
+      <button class="btn btn-secondary mt10" onclick="doLogout()">${ic.logout} Log out</button>
+    </div>
+  `;
+  return withNav(body, 'patient', 'profile');
+};
+function doLogout(){ S.hist=[]; S.notifications=[{id:1,title:'Welcome to MediCare',body:'Your account is ready to go.',time:'Just now'}]; goRoot('welcome'); }
+
+SCREENS.personalInfo = () => {
+  const body = `<div class="pad">
+    <div class="field"><label>Full name</label><input value="${S.user.name}"></div>
+    <div class="field"><label>Mobile number</label><input value="+91 98765 43210"></div>
+    <div class="field"><label>Email</label><input value="sona@email.com"></div>
+    <div class="field"><label>Address</label><input value="Palakkad, Kerala"></div>
+    <button class="btn btn-primary mt10" onclick="showToastSafe('Profile updated')">Save changes</button>
+  </div>`;
+  return withoutNav(topbar('Personal information','', true) + body);
+};
+
+SCREENS.historyList = (p) => {
+  const sets = {
+    appointments:[{t:'Dr. Ananya Rao — General Physician',s:'Today, 10:30 AM',badge:'Upcoming','c':'badge-teal'},{t:'Dr. Karthik Menon — Cardiologist',s:'12 Jul, completed',badge:'Completed','c':'badge-green'}],
+    orders:[{t:'GreenLeaf Pharmacy',s:'2 items · ₹63 · Delivered',badge:'Delivered','c':'badge-green'},{t:'CityCare Chemists',s:'1 item · ₹89 · Delivered',badge:'Delivered','c':'badge-green'}],
+    services:[{t:'Home Nurse — Sunitha Varma',s:'Completed on 3 Aug',badge:'Completed','c':'badge-green'}],
+    prescriptions:[{t:'RX-GP0-08 — Dr. Ananya Rao',s:'Paracetamol, Cetirizine',badge:'Saved','c':'badge-teal'},{t:'RX-CARDIO1-12 — Dr. Karthik Menon',s:'Amlodipine',badge:'Saved','c':'badge-teal'}],
+  };
+  const titles = {appointments:'Appointment History',orders:'Medicine Orders',services:'Service History',prescriptions:'Saved Prescriptions'};
+  const items = sets[p.kind]||[];
+  const body = `<div class="section col gap10" style="padding-top:16px;">
+    ${items.map(it=>`<div class="card row gap12">
+      <div class="avatar sm">${ic.file}</div>
+      <div style="flex:1"><div style="font-weight:700;font-size:13px;">${it.t}</div><div class="muted" style="font-size:11.5px;margin-top:2px;">${it.s}</div></div>
+      <span class="badge ${it.c}">${it.badge}</span>
+    </div>`).join('') || `<div class="empty">Nothing here yet.</div>`}
+  </div>`;
+  return withoutNav(topbar(titles[p.kind],'', true) + body);
+};
+
+SCREENS.notificationHistory = () => {
+  const body = `<div class="section col gap10" style="padding-top:16px;">
+    ${S.notifications.map(n=>`<div class="card row gap12">
+      <div class="avatar sm">${ic.bell}</div>
+      <div style="flex:1"><div style="font-weight:700;font-size:13px;">${n.title}</div><div class="muted" style="font-size:11.5px;margin-top:2px;">${n.body}</div></div>
+      <span class="muted mono" style="font-size:10px;">${n.time}</span>
+    </div>`).join('') || `<div class="empty">No notifications yet.</div>`}
+  </div>`;
+  return withoutNav(topbar('Notification History','', true) + body);
+};
+
+SCREENS.settingsScreen = () => {
+  const body = `<div class="section col gap10" style="padding-top:16px;">
+    ${profileRow(ic.bell,'Push notifications','Enabled','void(0)')}
+    ${profileRow(ic.user,'Privacy','Manage your data','void(0)')}
+    ${profileRow(ic.support,'Language','English','void(0)')}
+  </div>`;
+  return withoutNav(topbar('Settings','', true) + body);
+};
+SCREENS.supportScreen = () => {
+  const body = `<div class="pad center">
+    <div class="avatar round" style="width:64px;height:64px;margin:0 auto;">${ic.headset}</div>
+    <div class="h-display mt14" style="font-size:18px;">We're here to help</div>
+    <div class="muted mt6" style="font-size:12.5px;">Chat with our support team, available 24/7.</div>
+    <button class="btn btn-primary mt18" onclick="showToastSafe('Connecting you to support…')">${ic.chat} Start chat</button>
+  </div>`;
+  return withoutNav(topbar('Customer Support','', true) + body);
+};
+
+/* ============================================================
+   PROFESSIONAL DASHBOARD
+   ============================================================ */
+SCREENS.proDashboard = () => {
+  const pending = S.appts.filter(a=>a.status==='pending');
+  const body = `
+    <div class="pad" style="padding-bottom:6px;">
+      <div class="row space-between">
+        <div class="row gap10">
+          <div class="avatar round">${S.user.name[4]||S.user.name[0]}</div>
+          <div><div style="font-size:12px;color:var(--muted)">Welcome back</div><div style="font-weight:700;font-size:16px;">${S.user.name}</div></div>
+        </div>
+        <button class="back" onclick="go('notificationHistory')">${ic.bell}</button>
+      </div>
+      <div class="card row space-between mt18" style="background:var(--teal-pale);border:none;">
+        <div class="row gap10"><div class="avatar sm" style="background:#fff;">${ic.toggle}</div><div><div style="font-weight:700;font-size:13.5px;">${S.proAvailable?'You are Available':'You are Offline'}</div><div class="muted" style="font-size:11px;">Toggle to control new requests</div></div></div>
+        <button class="btn btn-sm ${S.proAvailable?'btn-primary':'btn-secondary'}" style="width:auto;" onclick="S.proAvailable=!S.proAvailable;render()">${S.proAvailable?'On':'Off'}</button>
+      </div>
+    </div>
+    <div class="section">
+      <div class="grid3 mb18">
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:16px;">${pending.length}</div><div class="muted" style="font-size:10px;">Pending</div></div>
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:16px;">${S.appts.filter(a=>a.status!=='pending'&&a.status!=='completed').length}</div><div class="muted" style="font-size:10px;">In progress</div></div>
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:16px;">${S.appts.filter(a=>a.status==='completed').length}</div><div class="muted" style="font-size:10px;">Completed</div></div>
+      </div>
+      <div class="eyebrow mb10">Today's appointments</div>
+      <div class="col gap10">
+        ${S.appts.map(a=>apptCard(a)).join('')}
+      </div>
+    </div>
+  `;
+  return withNav(body, 'professional', 'home');
+};
+function apptCard(a){
+  const badgeMap = {pending:['badge-gold','Pending'],accepted:['badge-teal','Accepted'],consulting:['badge-green','In consult'],prescribed:['badge-green','Prescribed'],completed:['badge-green','Completed'],rejected:['badge-red','Rejected']};
+  const [cls,label] = badgeMap[a.status]||['badge-teal',a.status];
+  return `<div class="card card-tap row gap12" onclick="go('apptDetail',{id:'${a.id}'})">
+    <div class="avatar sm">${a.patient[0]}</div>
+    <div style="flex:1"><div style="font-weight:700;font-size:13.5px;">${a.patient}</div><div class="muted" style="font-size:11.5px;margin-top:2px;">${a.time} · ${a.reason}</div></div>
+    <span class="badge ${cls}">${label}</span>
+  </div>`;
+}
+SCREENS.proAppointments = () => {
+  const body = `<div class="section col gap10" style="padding-top:16px;">${S.appts.map(a=>apptCard(a)).join('')}</div>`;
+  return withNav(body, 'professional', 'appts');
+};
+SCREENS.apptDetail = (p) => {
+  const a = S.appts.find(x=>x.id===p.id);
+  let actions = '';
+  if(a.status==='pending'){
+    actions = `<div class="btn-block-row">
+      <button class="btn btn-secondary" onclick="setApptStatus('${a.id}','rejected')">Reject</button>
+      <button class="btn btn-primary" onclick="setApptStatus('${a.id}','accepted')">Accept</button>
+    </div>`;
+  } else if(a.status==='accepted'){
+    actions = `<button class="btn btn-primary" onclick="setApptStatus('${a.id}','consulting');go('proConsult',{id:'${a.id}'})">${ic.video} Start Consultation</button>`;
+  } else if(a.status==='consulting'){
+    actions = `<button class="btn btn-primary" onclick="go('proConsult',{id:'${a.id}'})">${ic.video} Resume Consultation</button>`;
+  } else if(a.status==='prescribed' || a.status==='completed'){
+    actions = `<div class="badge badge-green">${ic.check} Consultation complete</div>`;
+  } else {
+    actions = `<div class="badge badge-red">Request rejected</div>`;
+  }
+  const body = `<div class="pad">
+    <div class="card mb18">
+      <div class="row gap12"><div class="avatar">${a.patient[0]}</div><div><div style="font-weight:700;font-size:14.5px;">${a.patient}</div><div class="muted" style="font-size:12px;">${a.time}</div></div></div>
+      ${pulseDivider()}
+      <div class="muted" style="font-size:13px;"><b>Reason:</b> ${a.reason}</div>
+    </div>
+    ${actions}
+  </div>`;
+  return withoutNav(topbar('Appointment','', true) + body);
+};
+function setApptStatus(id, status){
+  const a = S.appts.find(x=>x.id===id);
+  a.status = status;
+  if(status==='accepted'){ pushNotification('Appointment accepted','You accepted '+a.patient+"'s appointment."); showToastSafe('Appointment accepted'); go('apptDetail',{id}); }
+  else if(status==='rejected'){ pushNotification('Appointment declined','You declined '+a.patient+"'s request."); showToastSafe('Appointment rejected'); go('apptDetail',{id}); }
+  else render();
+}
+SCREENS.proConsult = (p) => {
+  const a = S.appts.find(x=>x.id===p.id);
+  const body = `
+    <div style="height:100%;background:linear-gradient(160deg,#0E2E29,#193F38);display:flex;flex-direction:column;color:#fff;">
+      <div class="row space-between" style="padding:18px 20px;">
+        <span class="badge badge-red" style="background:rgba(214,69,69,.25);color:#ffb3ab;">● Live · 05:12</span>
+        <button class="back" style="background:rgba(255,255,255,.12);" onclick="goBack()">${ic.close}</button>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div class="avatar round" style="width:104px;height:104px;font-size:34px;background:rgba(255,255,255,.14);color:#fff;">${a.patient[0]}</div>
+        <div style="font-weight:700;margin-top:16px;font-size:16px;">${a.patient}</div>
+        <div style="opacity:.7;font-size:12.5px;margin-top:3px;">${a.reason}</div>
+      </div>
+      <div class="pad" style="padding-bottom:30px;">
+        <button class="btn btn-primary" onclick="S.activeApptId='${a.id}';go('proPrescribe',{id:'${a.id}'})">${ic.file} Generate Digital Prescription</button>
+      </div>
+    </div>
+  `;
+  return withoutNav(body, {fab:false});
+};
+SCREENS.proPrescribe = (p) => {
+  const a = S.appts.find(x=>x.id===p.id);
+  const body = `<div class="pad">
+    <div class="eyebrow mb10">Digital prescription for ${a.patient}</div>
+    <div class="field"><label>Medicine</label><input value="Paracetamol 500mg"></div>
+    <div class="field"><label>Dosage &amp; duration</label><input value="1-0-1, 5 days"></div>
+    <div class="field"><label>Notes for patient</label><textarea rows="3">Stay hydrated, rest well. Follow up if fever persists beyond 3 days.</textarea></div>
+    <button class="btn btn-primary" onclick="finishConsult('${a.id}')">${ic.upload} Upload &amp; Finish Consultation</button>
+  </div>`;
+  return withoutNav(topbar('Prescribe','', true) + body);
+};
+function finishConsult(id){
+  const a = S.appts.find(x=>x.id===id);
+  a.status='completed';
+  pushNotification('Prescription shared', 'Digital prescription sent to '+a.patient+'.');
+  showToastSafe('Consultation completed');
+  goRoot('proDashboard');
+}
+SCREENS.proProfile = () => {
+  const body = `
+    <div class="pad center" style="padding-bottom:8px;">
+      <div class="avatar round" style="width:74px;height:74px;font-size:26px;margin:0 auto;">${S.user.name[4]||S.user.name[0]}</div>
+      <div class="h-display mt10" style="font-size:19px;">${S.user.name}</div>
+      <div class="badge badge-teal mt6">${ic.check} Verified professional</div>
+    </div>
+    <div class="section col gap10">
+      ${profileRow(ic.user,'Personal information','Name, contact, address',`go('personalInfo')`)}
+      ${profileRow(ic.file,'Documents &amp; license','Verified · License #MD-2291',`void(0)`)}
+      ${profileRow(ic.bell,'Notification History', S.notifications.length+' notifications',`go('notificationHistory')`)}
+      ${profileRow(ic.settings,'Settings','Availability, preferences',`go('settingsScreen')`)}
+      ${profileRow(ic.headset,'Customer Support','Chat with our team',`go('supportScreen')`)}
+      <button class="btn btn-secondary mt10" onclick="doLogout()">${ic.logout} Log out</button>
+    </div>
+  `;
+  return withNav(body, 'professional', 'profile');
+};
+
+/* ============================================================
+   PHARMACY DASHBOARD
+   ============================================================ */
+function orderCard(o){
+  const badgeMap = {new:['badge-gold','New'],preparing:['badge-teal','Preparing'],ready:['badge-teal','Ready'],delivered:['badge-green','Delivered']};
+  const [cls,label]=badgeMap[o.status];
+  return `<div class="card card-tap row gap12" onclick="go('pharmOrderDetail',{id:'${o.id}'})">
+    <div class="avatar sm">${ic.pill}</div>
+    <div style="flex:1"><div style="font-weight:700;font-size:13.5px;">${o.customer}</div><div class="muted" style="font-size:11.5px;margin-top:2px;">${o.items.join(', ')}</div></div>
+    <span class="badge ${cls}">${label}</span>
+  </div>`;
+}
+SCREENS.pharmDashboard = () => {
+  const body = `
+    <div class="pad" style="padding-bottom:6px;">
+      <div class="row space-between">
+        <div class="row gap10">
+          <div class="avatar round">${S.user.name[0]}</div>
+          <div><div style="font-size:12px;color:var(--muted)">Welcome back</div><div style="font-weight:700;font-size:16px;">${S.user.name}</div></div>
+        </div>
+        <button class="back" onclick="go('notificationHistory')">${ic.bell}</button>
+      </div>
+    </div>
+    <div class="section">
+      <div class="grid3 mb18">
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:16px;">${S.orders.filter(o=>o.status==='new').length}</div><div class="muted" style="font-size:10px;">New</div></div>
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:16px;">${S.orders.filter(o=>o.status==='preparing'||o.status==='ready').length}</div><div class="muted" style="font-size:10px;">In progress</div></div>
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:16px;">312</div><div class="muted" style="font-size:10px;">In stock</div></div>
+      </div>
+      <div class="eyebrow mb10">Recent orders</div>
+      <div class="col gap10">${S.orders.map(orderCard).join('')}</div>
+    </div>
+  `;
+  return withNav(body, 'pharmacy', 'home');
+};
+SCREENS.pharmOrders = () => {
+  const body = `<div class="section col gap10" style="padding-top:16px;">${S.orders.map(orderCard).join('')}</div>`;
+  return withNav(body, 'pharmacy', 'orders');
+};
+SCREENS.pharmOrderDetail = (p) => {
+  const o = S.orders.find(x=>x.id===p.id);
+  const flow = ['new','preparing','ready','delivered'];
+  const idx = flow.indexOf(o.status);
+  const nextLabel = {new:'Accept Order',preparing:'Mark Ready',ready:'Mark Delivered'};
+  const body = `<div class="pad">
+    <div class="card mb18">
+      <div class="row gap12"><div class="avatar">${ic.pill}</div><div><div style="font-weight:700;font-size:14.5px;">${o.customer}</div><div class="muted mono" style="font-size:10.5px;">Order #${o.id.toUpperCase()}</div></div></div>
+      ${pulseDivider()}
+      ${o.items.map(it=>`<div style="font-size:13px;margin-bottom:4px;">• ${it}</div>`).join('')}
+    </div>
+    <div class="stepper mb6">${flow.map((f,i)=>`<div class="seg ${i<=idx?'on':''}"></div>`).join('')}</div>
+    <div class="row space-between muted" style="font-size:10px;margin-bottom:18px;"><span>New</span><span>Preparing</span><span>Ready</span><span>Delivered</span></div>
+    ${o.status!=='delivered' ? `<button class="btn btn-primary" onclick="advancePharmOrder('${o.id}')">${ic.check} ${nextLabel[o.status]}</button>` : `<div class="badge badge-green">${ic.check} Order completed</div>`}
+  </div>`;
+  return withoutNav(topbar('Order detail','', true) + body);
+};
+function advancePharmOrder(id){
+  const o = S.orders.find(x=>x.id===id);
+  const flow = ['new','preparing','ready','delivered'];
+  const idx = flow.indexOf(o.status);
+  o.status = flow[idx+1];
+  const msgs = {preparing:'Order accepted — preparing medicines.',ready:'Order is ready.',delivered:'Order delivered to customer.'};
+  pushNotification('Order '+o.status, msgs[o.status]);
+  showToastSafe('Order marked as '+o.status);
+  go('pharmOrderDetail',{id});
+}
+SCREENS.pharmProfile = () => {
+  const body = `
+    <div class="pad center" style="padding-bottom:8px;">
+      <div class="avatar round" style="width:74px;height:74px;font-size:26px;margin:0 auto;">${S.user.name[0]}</div>
+      <div class="h-display mt10" style="font-size:19px;">${S.user.name}</div>
+      <div class="badge badge-teal mt6">${ic.check} Verified pharmacy</div>
+    </div>
+    <div class="section col gap10">
+      ${profileRow(ic.user,'Business information','Name, address, license',`go('personalInfo')`)}
+      ${profileRow(ic.pill,'Inventory','312 medicines in stock',`void(0)`)}
+      ${profileRow(ic.bell,'Notification History', S.notifications.length+' notifications',`go('notificationHistory')`)}
+      ${profileRow(ic.settings,'Settings','Business hours, preferences',`go('settingsScreen')`)}
+      ${profileRow(ic.headset,'Customer Support','Chat with our team',`go('supportScreen')`)}
+      <button class="btn btn-secondary mt10" onclick="doLogout()">${ic.logout} Log out</button>
+    </div>
+  `;
+  return withNav(body, 'pharmacy', 'profile');
+};
+
+/* ============================================================
+   SCREENS (registry init)
+   ============================================================ */
+
+/* ---------- 0. Splash ---------- */
+SCREENS.splash = () => `
+  <div class="screen-scroll fade-in" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:linear-gradient(160deg,var(--teal),var(--teal-light));color:#fff;text-align:center;padding:0 30px;">
+    <div style="width:84px;height:84px;border-radius:26px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M2.5 8.5l19 7M2.5 15.5l19-7" stroke-opacity="0"/><rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M8.5 8.5l7 7" transform="rotate(-45 12 12)"/></svg>
+    </div>
+    <div class="h-display" style="font-size:34px;color:#fff;">MediCare</div>
+    <div style="font-family:var(--font-mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.8;margin-top:8px;">Care, on call</div>
+  </div>
+`;
+
+/* ---------- 0.5 Welcome ---------- */
+SCREENS.welcome = () => `
+  <div class="screen-scroll pad fade-in" style="display:flex;flex-direction:column;height:100%;">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+      <div class="eyebrow mb10">Multi-role healthcare</div>
+      <div class="h-display" style="font-size:32px;line-height:1.15;">Doctors, medicines<br>&amp; care — one tap away.</div>
+      <div class="muted mt14" style="font-size:14.5px;line-height:1.6;">Consult a doctor, order medicines, or book a nurse, physio, or ambulance — with an AI assistant on hand for every question.</div>
+      <div class="row gap14 mt24">
+        <div class="col" style="align-items:center;gap:6px;"><div class="avatar sm">${ic.briefcase}</div><span style="font-size:10.5px;color:var(--muted)">Doctors</span></div>
+        <div class="col" style="align-items:center;gap:6px;"><div class="avatar sm">${ic.pill}</div><span style="font-size:10.5px;color:var(--muted)">Medicines</span></div>
+        <div class="col" style="align-items:center;gap:6px;"><div class="avatar sm">${ic.ambulance}</div><span style="font-size:10.5px;color:var(--muted)">Ambulance</span></div>
+      </div>
+    </div>
+    <div class="col gap10 mt24">
+      <button class="btn btn-primary" onclick="goRoot('roleSelect')">Sign up ${ic.chevR}</button>
+      <button class="btn btn-secondary" onclick="goRoot('login')">Log in</button>
+    </div>
+  </div>
+`;
+
+/* ---------- 1. Role select ---------- */
+SCREENS.roleSelect = () => `
+  ${topbar('Choose your role','How will you use MediCare?', false)}
+  <div class="screen-scroll pad fade-in">
+    <div class="grid2">
+      ${ROLES.map(r=>`
+        <div class="card card-tap" onclick="S.registerRole='${r.id}';go('register')">
+          <div class="avatar">${r.icon}</div>
+          <div style="font-weight:700;font-size:13.5px;margin-top:12px;">${r.label}</div>
+          <div class="muted" style="font-size:11px;margin-top:2px;">${r.docs?'Verification required':'Quick signup'}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="center mt18"><button class="btn-ghost" onclick="goRoot('login')">Already have an account? Log in</button></div>
+  </div>
+`;
+
+/* ---------- 2. Register (role-aware) ---------- */
+SCREENS.register = () => {
+  const role = ROLES.find(r=>r.id===S.registerRole) || ROLES[0];
+  const isPro = role.docs===true;
+  const isPharmacy = role.docs==='pharmacy';
+  return `
+  ${topbar('Create account', role.label, true)}
+  <div class="screen-scroll pad fade-in">
+    <div class="badge badge-teal mb14">${role.icon} ${role.label}</div>
+
+    ${isPharmacy ? `
+      <div class="field"><label>Pharmacy name</label><input placeholder="e.g. GreenLeaf Pharmacy"></div>
+      <div class="field"><label>Owner name</label><input placeholder="Full name"></div>
+    ` : `
+      <div class="field"><label>Full name</label><input placeholder="Your full name"></div>
+    `}
+    <div class="field"><label>Mobile number</label><input placeholder="+91 " type="tel"></div>
+    <div class="field"><label>Email</label><input placeholder="name@email.com" type="email"></div>
+    ${(isPro||isPharmacy) ? `<div class="field"><label>Address</label><input placeholder="Clinic / business address"></div>`:''}
+    ${isPro ? `<div class="field"><label>Experience (years)</label><input placeholder="e.g. 5" type="number"></div>`:''}
+    <div class="field"><label>Password</label><input placeholder="Create a password" type="password"></div>
+    <div class="field"><label>Confirm password</label><input placeholder="Re-enter password" type="password"></div>
+
+    ${isPro ? `
+      <div class="eyebrow mb10 mt10">Verification documents</div>
+      <div class="col gap10 mb14">
+        <div class="upload-box ${S.docsUploaded?'done':''}" onclick="S.docsUploaded=true;render()">${S.docsUploaded?ic.check+' Government ID uploaded':ic.upload+' Upload Government ID'}</div>
+        <div class="upload-box ${S.docsUploaded?'done':''}" onclick="S.docsUploaded=true;render()">${S.docsUploaded?ic.check+' License / Certificate uploaded':ic.upload+' Upload License / Certificate'}</div>
+        <div class="field" style="margin-bottom:0"><label>Registration number (optional)</label><input placeholder="License / registration no."></div>
+      </div>
+      <div class="badge badge-gold mb14">${ic.cal} Verification pending after signup</div>
+    ` : ''}
+    ${isPharmacy ? `
+      <div class="eyebrow mb10 mt10">Verification documents</div>
+      <div class="col gap10 mb14">
+        <div class="upload-box ${S.docsUploaded?'done':''}" onclick="S.docsUploaded=true;render()">${S.docsUploaded?ic.check+' Pharmacy license uploaded':ic.upload+' Upload pharmacy license'}</div>
+        <div class="upload-box ${S.docsUploaded?'done':''}" onclick="S.docsUploaded=true;render()">${S.docsUploaded?ic.check+' Business registration uploaded':ic.upload+' Upload business registration / registration book'}</div>
+      </div>
+      <div class="badge badge-gold mb14">${ic.cal} Verification pending after signup</div>
+    ` : ''}
+
+    <button class="btn btn-primary mt10" onclick="submitRegister()">Create account</button>
+    <div class="field-hint center mt10">By continuing you agree to MediCare's Terms &amp; Privacy Policy.</div>
+  </div>
+  `;
+};
+function submitRegister(){
+  const role = S.registerRole || 'patient';
+  S.user.role = role==='patient' ? 'patient' : (role==='pharmacy' ? 'pharmacy' : 'professional');
+  S.user.roleId = role;
+  S.user.name = S.user.name || 'New User';
+  const roleLabel = (ROLES.find(r=>r.id===role)||{}).label || role;
+  if(S.user.role==='patient'){
+    pushNotification('Account created', 'Welcome to MediCare — your account is ready.');
+    goRoot('patientHome');
+  } else {
+    pushNotification('Verification pending', `Your ${roleLabel} account is under review. We'll notify you once approved.`);
+    if(S.user.role==='pharmacy') goRoot('pharmDashboard'); else goRoot('proDashboard');
+  }
+}
+
+/* ---------- 3. Login ---------- */
+SCREENS.login = () => `
+  ${topbar('Log in', 'Welcome back', true)}
+  <div class="screen-scroll pad fade-in">
+    <div class="field"><label>Email</label><input placeholder="name@email.com" type="email"></div>
+    <div class="field"><label>Password</label><input placeholder="Your password" type="password"></div>
+    <div class="right" style="text-align:right;margin-bottom:18px;"><button class="btn-ghost" style="padding:0">Forgot password?</button></div>
+    <div class="eyebrow mb10">Demo: log in as</div>
+    <div class="col gap10 mb18">
+      <button class="btn btn-secondary" onclick="loginAs('patient')">${ic.user} Patient</button>
+      <button class="btn btn-secondary" onclick="loginAs('professional')">${ic.briefcase} Doctor / Professional</button>
+      <button class="btn btn-secondary" onclick="loginAs('pharmacy')">${ic.pill} Pharmacy</button>
+    </div>
+  </div>
+`;
+function loginAs(role){
+  S.user.role = role;
+  if(role==='patient'){ S.user.name='Sona'; goRoot('patientHome'); }
+  else if(role==='pharmacy'){ S.user.name='GreenLeaf Pharmacy'; goRoot('pharmDashboard'); }
+  else { S.user.name='Dr. Ananya Rao'; goRoot('proDashboard'); }
+  showToastSafe('Logged in successfully');
+}
+function showToastSafe(msg){ setTimeout(()=>showToast(msg), 60); }
+
+/* ============================================================
+   NEARBY HEALTHCARE
+   ============================================================ */
+SCREENS.nearbyCategory = () => {
+  const body = `
+    <div class="pad"><div class="eyebrow mb10">Nearby Healthcare</div><div class="h-display" style="font-size:21px;">What are you looking for?</div>${pulseDivider()}</div>
+    <div class="section col gap10">
+      ${NEARBY_CATEGORIES.map(c=>`
+        <div class="card card-tap row gap12" onclick="S.nearbyCat='${c.id}';go('nearbyList',{cat:'${c.id}'})">
+          <div class="avatar">${c.icon}</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:14.5px;">${c.label}</div><div class="muted" style="font-size:11.5px;margin-top:2px;">Find nearby ${c.label.toLowerCase()}s</div></div>
+          ${ic.chevR}
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return withoutNav(topbar('Nearby Healthcare','', true) + body);
+};
+
+SCREENS.nearbyList = (p) => {
+  const cat = NEARBY_CATEGORIES.find(c=>c.id===p.cat);
+  const places = genPlaces(p.cat);
+  const body = `
+    <div class="pad" style="padding-bottom:8px;"><div class="searchbar">${ic.map}<input placeholder="Search ${cat.label.toLowerCase()}s near you…" readonly></div></div>
+    <div class="section col gap10">
+      ${places.map(pl=>`
+        <div class="card card-tap row gap12" onclick="S.placeId='${pl.id}';go('placeProfile',{id:'${pl.id}',cat:'${p.cat}'})">
+          <div class="avatar">${cat.icon}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13.5px;">${pl.name}</div>
+            <div class="muted" style="font-size:11.5px;margin-top:2px;">${pl.distance} · ${pl.hours}</div>
+            <div class="stars mt6">★★★★★ <span class="muted mono" style="font-size:11px;">${pl.rating}</span></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return withoutNav(topbar(cat.label, places.length+' nearby', true) + body);
+};
+
+SCREENS.placeProfile = (p) => {
+  const cat = NEARBY_CATEGORIES.find(c=>c.id===p.cat);
+  const pl = genPlaces(p.cat).find(x=>x.id===p.id);
+  const isPharmacy = p.cat==='pharmacy';
+  const body = `
+    <div class="pad center" style="padding-bottom:8px;">
+      <div class="avatar round" style="width:70px;height:70px;margin:0 auto;">${cat.icon}</div>
+      <div class="h-display mt10" style="font-size:19px;">${pl.name}</div>
+      <div class="muted" style="font-size:12.5px;margin-top:4px;">${pl.address}</div>
+      <div class="row gap8" style="justify-content:center;margin-top:10px;">
+        <span class="badge badge-teal">★ ${pl.rating}</span>
+        <span class="badge badge-green">${pl.hours}</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="btn-block-row mb18">
+        <button class="btn btn-secondary btn-sm" onclick="showToastSafe('Calling ${pl.name}…')">${ic.phoneCall} Contact</button>
+        <button class="btn btn-secondary btn-sm" onclick="showToastSafe('Opening map view')">${ic.map} View on Map</button>
+      </div>
+      ${isPharmacy ? `
+        <div class="eyebrow mb10">Medicine availability</div>
+        <div class="searchbar mb14" onclick="go('medicineSearch',{id:'${p.id}'})">${ic.pill} <input placeholder="Tap to search medicines…" readonly style="pointer-events:none;"></div>
+        <button class="btn btn-primary" onclick="go('medicineSearch',{id:'${p.id}'})">${ic.pill} Search medicines</button>
+      ` : `
+        <div class="eyebrow mb10">Reviews</div>
+        <div class="card mb10">
+          <div class="row space-between"><span style="font-weight:700;font-size:13px;">Anjali M.</span><span class="stars">★★★★★</span></div>
+          <div class="muted mt6" style="font-size:12.5px;">Clean facility and friendly staff, would recommend.</div>
+        </div>
+      `}
+    </div>
+  `;
+  return withoutNav(topbar(cat.label,'', true) + body);
+};
+
+SCREENS.medicineSearch = (p) => {
+  const q = S.medQuery.toLowerCase();
+  const list = MEDICINES.filter(m=>m.name.toLowerCase().includes(q));
+  const body = `
+    <div class="pad" style="padding-bottom:8px;">
+      <div class="searchbar"><input id="medq" placeholder="Search medicines…" value="${S.medQuery}" oninput="S.medQuery=this.value;renderMedList()">${ic.pill}</div>
+    </div>
+    <div class="section col gap10" id="medlist">${medListHtml(list)}</div>
+    ${S.cart.length ? `
+      <div style="position:absolute;left:16px;right:16px;bottom:14px;">
+        <button class="btn btn-primary" onclick="go('deliveryChoice')">${S.cart.length} item(s) selected — Continue</button>
+      </div>` : ''}
+  `;
+  return withoutNav(topbar('Medicine search', 'Live availability', true) + body);
+};
+function medListHtml(list){
+  return list.map(m=>{
+    const inCart = S.cart.includes(m.id);
+    return `<div class="card row gap12">
+      <div class="avatar sm">${ic.pill}</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13.5px;">${m.name}</div>
+        <div class="row gap8 mt6">
+          <span class="badge ${m.available?'badge-green':'badge-red'}"><span class="dot ${m.available?'dot-green':'dot-red'}"></span> ${m.available?'Available':'Not available'}</span>
+          ${m.rx?`<span class="badge badge-gold">Rx required</span>`:''}
+        </div>
+      </div>
+      <div class="col" style="align-items:flex-end;gap:8px;">
+        <span class="mono" style="font-weight:700;font-size:13px;">₹${m.price}</span>
+        <button class="btn btn-sm ${inCart?'btn-secondary':'btn-primary'}" style="width:auto;padding:7px 14px;" ${!m.available?'disabled':''} onclick="toggleCart('${m.id}')">${inCart?'Added ✓':'Add'}</button>
+      </div>
+    </div>`;
+  }).join('') || `<div class="empty">No medicines match your search.</div>`;
+}
+function toggleCart(id){
+  const i = S.cart.indexOf(id);
+  if(i>-1) S.cart.splice(i,1); else S.cart.push(id);
+  render();
+}
+function renderMedList(){
+  const q = S.medQuery.toLowerCase();
+  const list = MEDICINES.filter(m=>m.name.toLowerCase().includes(q));
+  document.getElementById('medlist').innerHTML = medListHtml(list);
+  document.getElementById('medq').focus();
+}
+
+SCREENS.deliveryChoice = () => {
+  const items = MEDICINES.filter(m=>S.cart.includes(m.id));
+  const total = items.reduce((s,m)=>s+m.price,0);
+  const body = `
+    <div class="pad">
+      <div class="eyebrow mb10">Your order</div>
+      <div class="card mb18">
+        ${items.map(m=>`<div class="row space-between" style="font-size:13px;margin-bottom:6px;"><span>${m.name}</span><span class="mono">₹${m.price}</span></div>`).join('')}
+        ${pulseDivider()}
+        <div class="row space-between" style="font-weight:700;font-size:14px;"><span>Total</span><span class="mono">₹${total}</span></div>
+      </div>
+      <div class="h-display mb14" style="font-size:18px;">Need delivery?</div>
+      <div class="col gap10">
+        <button class="btn btn-primary" onclick="S.delivery='yes';go('rxCheck')">${ic.map} Yes, deliver to my address</button>
+        <button class="btn btn-secondary" onclick="S.delivery='no';go('orderStatus',{mode:'pickup'})">${ic.check} No, I'll pick it up</button>
+      </div>
+    </div>
+  `;
+  return withoutNav(topbar('Delivery','', true) + body);
+};
+
+SCREENS.rxCheck = () => {
+  const items = MEDICINES.filter(m=>S.cart.includes(m.id));
+  const needsRx = items.some(m=>m.rx);
+  const body = `
+    <div class="pad">
+      ${needsRx ? `
+        <div class="badge badge-gold mb14">${ic.file} Prescription required</div>
+        <div class="h-display mb10" style="font-size:19px;">Upload your prescription</div>
+        <div class="muted mb14" style="font-size:13px;">One or more items in your cart require a valid prescription for verification.</div>
+        <div class="upload-box ${S.rxUploaded?'done':''}" onclick="S.rxUploaded=true;render()">${S.rxUploaded?ic.check+' Prescription uploaded — pending verification':ic.upload+' Upload prescription photo'}</div>
+        <button class="btn btn-primary mt18" ${!S.rxUploaded?'disabled':''} onclick="verifyRx()">Submit for verification</button>
+      ` : `
+        <div class="badge badge-green mb14">${ic.check} No prescription needed</div>
+        <div class="h-display mb14" style="font-size:19px;">You're all set</div>
+        <button class="btn btn-primary" onclick="go('orderStatus',{mode:'delivery'})">Confirm order</button>
+      `}
+    </div>
+  `;
+  return withoutNav(topbar('Prescription check','', true) + body);
+};
+function verifyRx(){
+  showToastSafe('Prescription verified');
+  setTimeout(()=>go('orderStatus',{mode:'delivery'}), 500);
+}
+
+SCREENS.orderStatus = (p) => {
+  const isPickup = p.mode==='pickup';
+  pushNotificationOnce('order-confirmed','Order confirmed', isPickup?'Your pickup order is confirmed.':'Your medicine order has been confirmed.');
+  const body = `
+    <div class="pad center">
+      <div class="avatar round" style="width:78px;height:78px;margin:0 auto;background:var(--green-pale);color:var(--green);">${ic.check}</div>
+      <div class="h-display mt14" style="font-size:20px;">Order confirmed</div>
+      <div class="muted mt6" style="font-size:13px;">${isPickup ? 'Ready for pickup in ~20 minutes' : 'Arriving in ~40 minutes'}</div>
+    </div>
+    <div class="section">
+      <div class="stepper mb6">
+        <div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div>
+      </div>
+      <div class="row space-between muted" style="font-size:10.5px;margin-bottom:18px;"><span>Confirmed</span><span>${isPickup?'Ready':'Preparing'}</span><span>${isPickup?'Picked up':'Out for delivery'}</span><span>${isPickup?'Done':'Delivered'}</span></div>
+      <button class="btn btn-primary" onclick="advanceOrder('${isPickup?'pickup':'delivery'}')">${ic.check} Simulate: mark as ${isPickup?'picked up':'delivered'}</button>
+      <button class="btn btn-secondary mt10" onclick="goRoot('patientHome')">Back to Home</button>
+    </div>
+  `;
+  return withoutNav(topbar('Order status','', true) + body);
+};
+function pushNotificationOnce(key,title,body){
+  if(!S._notifiedKeys) S._notifiedKeys={};
+  if(S._notifiedKeys[key]) return;
+  S._notifiedKeys[key]=true;
+  pushNotification(title,body);
+}
+function advanceOrder(mode){
+  pushNotification('Order delivered', mode==='pickup' ? 'Your order was picked up successfully.' : 'Your order has been delivered.');
+  S.cart=[]; S.rxUploaded=false;
+  go('rateOrder',{mode});
+}
+SCREENS.rateOrder = (p) => {
+  const body = `
+    <div class="pad center">
+      <div class="h-display" style="font-size:19px;">Rate your experience</div>
+      <div class="muted mt6" style="font-size:12.5px;">How was your ${p.mode==='pickup'?'pickup':'delivery'}?</div>
+      <div class="stars mt18" style="font-size:32px;letter-spacing:6px;">★★★★★</div>
+      <textarea class="mt18" style="width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface-alt);font-size:13.5px;" rows="3" placeholder="Leave a comment (optional)"></textarea>
+      <button class="btn btn-primary mt18" onclick="showToastSafe('Thanks for your feedback!');goRoot('patientHome')">Submit rating</button>
+    </div>
+  `;
+  return withoutNav(topbar('Rate order','', true) + body);
+};
+
+/* ============================================================
+   SERVICES
+   ============================================================ */
+SCREENS.servicesCategory = () => {
+  const body = `
+    <div class="pad"><div class="searchbar">${ic.grid}<input placeholder="Search services…" readonly></div></div>
+    <div class="section">
+      <div class="grid2">
+        ${SERVICE_CATEGORIES.map(c=>`
+          <div class="card card-tap" onclick="S.serviceCat='${c.id}';go('servicesList',{cat:'${c.id}'})">
+            <div class="avatar sm">${c.icon}</div>
+            <div style="font-weight:700;font-size:13px;margin-top:12px;">${c.label}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  return withNav(body, 'patient', 'services');
+};
+
+SCREENS.servicesList = (p) => {
+  const cat = SERVICE_CATEGORIES.find(c=>c.id===p.cat);
+  if(cat.id==='ambulance'){
+    const body = `
+      <div class="pad center">
+        <div class="avatar round" style="width:74px;height:74px;margin:0 auto;background:var(--coral-pale);color:var(--coral-dark);">${ic.ambulance}</div>
+        <div class="h-display mt14" style="font-size:19px;">Need an ambulance now?</div>
+        <div class="muted mt6" style="font-size:13px;">We'll dispatch the nearest available driver to your location.</div>
+        <button class="btn btn-primary mt18" onclick="S.proId='ambulance-p0';go('serviceBooking',{cat:'ambulance',id:'ambulance-p0'})">${ic.bolt} Request Ambulance</button>
+      </div>
+    `;
+    return withoutNav(topbar('Ambulance','', true) + body);
+  }
+  const pros = genPros(p.cat);
+  const body = `
+    <div class="pad" style="padding-bottom:8px;"><div class="h-display" style="font-size:19px;">${cat.label}</div></div>
+    <div class="section col gap10">
+      ${pros.map(pr=>`
+        <div class="card card-tap row gap12" onclick="S.proId='${pr.id}';go('serviceBooking',{cat:'${p.cat}',id:'${pr.id}'})">
+          <div class="avatar">${pr.name[0]}</div>
+          <div style="flex:1">
+            <div class="row space-between"><span style="font-weight:700;font-size:13.5px;">${pr.name}</span>${pr.verified?`<span class="badge badge-teal">${ic.check}</span>`:''}</div>
+            <div class="muted" style="font-size:11.5px;margin-top:2px;">${cat.label} · ${pr.exp} yrs exp</div>
+            <div class="row space-between mt6">
+              <span class="stars">★★★★★ <span class="muted mono" style="font-size:11px;">${pr.rating} (${pr.reviews})</span></span>
+              <span class="badge ${pr.available?'badge-green':'badge-red'}">${pr.available?'Available':'Unavailable'}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return withoutNav(topbar(cat.label, pros.length+' professionals nearby', true) + body);
+};
+
+SCREENS.serviceBooking = (p) => {
+  const cat = SERVICE_CATEGORIES.find(c=>c.id===p.cat);
+  const pr = genPros(p.cat).find(x=>x.id===p.id) || {name:'Nearest driver'};
+  const key = 'svc-'+p.id;
+  if(!S._svcStatus) S._svcStatus={};
+  const status = S._svcStatus[key] || 'requesting';
+  let content;
+  if(status==='requesting'){
+    content = `
+      <div class="center">
+        <div class="avatar round" style="width:70px;height:70px;margin:0 auto;">${pr.name[0]||ic.ambulance}</div>
+        <div class="h-display mt14" style="font-size:18px;">Requesting ${pr.name}…</div>
+        <div class="muted mt6" style="font-size:12.5px;">Waiting for professional to accept</div>
+        <button class="btn btn-primary mt18" onclick="S._svcStatus['${key}']='accepted';render()">${ic.check} Simulate: professional accepts</button>
+      </div>`;
+  } else if(status==='accepted'){
+    pushNotificationOnce(key+'-acc','Booking confirmed', pr.name+' accepted your service request.');
+    content = `
+      <div class="center">
+        <div class="avatar round" style="width:70px;height:70px;margin:0 auto;background:var(--green-pale);color:var(--green);">${ic.check}</div>
+        <div class="h-display mt14" style="font-size:18px;">Booking confirmed</div>
+        <div class="muted mt6" style="font-size:12.5px;">${pr.name} is on the way</div>
+        <button class="btn btn-primary mt18" onclick="S._svcStatus['${key}']='done';render()">${ic.check} Simulate: mark service complete</button>
+      </div>`;
+  } else {
+    pushNotificationOnce(key+'-done','Service completed', 'Your '+cat.label.toLowerCase()+' service is complete.');
+    content = `
+      <div class="center">
+        <div class="h-display" style="font-size:18px;">Rate your service</div>
+        <div class="stars mt14" style="font-size:30px;letter-spacing:6px;">★★★★★</div>
+        <button class="btn btn-primary mt18" onclick="showToastSafe('Thanks for your feedback!');goRoot('servicesCategory')">Submit &amp; finish</button>
+      </div>`;
+  }
+  return withoutNav(topbar(cat.label,'', true) + `<div class="pad">${content}</div>`);
+};
+
+/* ============================================================
+   PATIENT — HOME
+   ============================================================ */
+SCREENS.patientHome = () => {
+  const body = `
+    <div class="pad" style="padding-bottom:6px;">
+      <div class="row space-between">
+        <div class="row gap10">
+          <div class="avatar round">${S.user.name[0]}</div>
+          <div><div style="font-size:12px;color:var(--muted)">Good morning</div><div style="font-weight:700;font-size:16px;">${S.user.name}</div></div>
+        </div>
+        <button class="back" onclick="go('notificationHistory')" style="position:relative;">${ic.bell}${S.notifications.length?`<span style="position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--coral)"></span>`:''}</button>
+      </div>
+      <div class="searchbar mt18" onclick="go('doctorSpecialty')">${ic.map} <input placeholder="Search doctors, medicines, services…" readonly></div>
+    </div>
+    <div class="section">
+      <div class="grid2">
+        <div class="card card-tap" style="background:var(--teal);color:#fff;border:none;" onclick="go('doctorSpecialty')">
+          <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;">${ic.briefcase}</div>
+          <div style="font-weight:700;margin-top:14px;font-size:14px;">Doctor Consultation</div>
+          <div style="font-size:11px;opacity:.8;margin-top:2px;">Video, audio or chat</div>
+        </div>
+        <div class="card card-tap" onclick="go('nearbyCategory')">
+          <div class="avatar sm">${ic.map}</div>
+          <div style="font-weight:700;margin-top:14px;font-size:14px;">Nearby Healthcare</div>
+          <div class="muted" style="font-size:11px;margin-top:2px;">Pharmacy, hospital, labs</div>
+        </div>
+        <div class="card card-tap" onclick="go('servicesCategory')">
+          <div class="avatar sm">${ic.grid}</div>
+          <div style="font-weight:700;margin-top:14px;font-size:14px;">Services</div>
+          <div class="muted" style="font-size:11px;margin-top:2px;">Nurses, physio, ambulance</div>
+        </div>
+        <div class="card card-tap" onclick="go('profile')">
+          <div class="avatar sm">${ic.user}</div>
+          <div style="font-weight:700;margin-top:14px;font-size:14px;">Profile</div>
+          <div class="muted" style="font-size:11px;margin-top:2px;">History &amp; settings</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="row space-between mb10"><div class="eyebrow">Upcoming</div></div>
+      <div class="card row gap10" onclick="go('doctorProfile',{id:'gp-0'})">
+        <div class="avatar sm">${ic.briefcase}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13.5px;">Dr. Ananya Rao — General Physician</div>
+          <div class="muted" style="font-size:11.5px;margin-top:2px;">Today, 10:30 AM · Video consultation</div>
+        </div>
+        <span class="badge badge-green">${ic.check} Confirmed</span>
+      </div>
+    </div>
+  `;
+  return withNav(body, 'patient', 'home');
+};
+
+/* ============================================================
+   DOCTOR CONSULTATION
+   ============================================================ */
+SCREENS.doctorSpecialty = () => {
+  const body = `
+    <div class="pad">
+      <div class="eyebrow mb10">Step 1 of 3</div>
+      <div class="h-display" style="font-size:21px;">Choose a specialty</div>
+      ${pulseDivider()}
+    </div>
+    <div class="section">
+      <div class="grid2">
+        ${SPECIALTIES.map(s=>`
+          <div class="card card-tap" onclick="S.specialty='${s.id}';go('doctorList',{specialty:'${s.id}'})">
+            <div class="avatar sm">${ic.briefcase}</div>
+            <div style="font-weight:700;font-size:13px;margin-top:12px;">${s.name}</div>
+            <div class="muted" style="font-size:11px;margin-top:2px;">${s.n} doctors</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  return withoutNav(topbar('Doctor Consultation','', true) + body);
+};
+
+SCREENS.doctorList = (p) => {
+  const spec = SPECIALTIES.find(s=>s.id===p.specialty) || SPECIALTIES[0];
+  const doctors = genDoctors(spec.id);
+  const statusBadge = st => st==='Available' ? `<span class="badge badge-green"><span class="dot dot-green"></span> Available</span>`
+    : st==='Busy' ? `<span class="badge badge-gold"><span class="dot dot-gold"></span> Busy</span>`
+    : `<span class="badge badge-red"><span class="dot dot-red"></span> Offline</span>`;
+  const body = `
+    <div class="pad" style="padding-bottom:8px;">
+      <div class="eyebrow mb6">Step 2 of 3</div>
+      <div class="h-display" style="font-size:20px;">${spec.name}</div>
+    </div>
+    <div class="section col gap10">
+      ${doctors.map(d=>`
+        <div class="card card-tap row gap10" onclick="go('doctorProfile',{id:'${d.id}'})">
+          <div class="avatar">${d.name[4]}</div>
+          <div style="flex:1">
+            <div class="row space-between"><span style="font-weight:700;font-size:13.5px;">${d.name}</span>${d.verified?`<span class="badge badge-teal">${ic.check} Verified</span>`:''}</div>
+            <div class="muted" style="font-size:11.5px;margin-top:2px;">${spec.name} · ${d.exp} yrs exp</div>
+            <div class="row space-between mt6">
+              <span class="stars">★★★★★ <span class="muted mono" style="font-size:11px;">${d.rating} (${d.reviews})</span></span>
+              <span class="mono" style="font-size:12.5px;font-weight:700;">₹${d.fee}</span>
+            </div>
+            <div class="mt6">${statusBadge(d.status)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  return withoutNav(topbar(spec.name, doctors.length+' doctors available', true) + body);
+};
+
+SCREENS.doctorProfile = (p) => {
+  const specId = p.id.split('-')[0];
+  const spec = SPECIALTIES.find(s=>s.id===specId) || SPECIALTIES[0];
+  const d = genDoctors(specId).find(x=>x.id===p.id) || genDoctors(specId)[0];
+  const body = `
+    <div class="pad center" style="padding-bottom:10px;">
+      <div class="avatar round" style="width:76px;height:76px;font-size:26px;margin:0 auto;">${d.name[4]}</div>
+      <div class="h-display mt10" style="font-size:20px;">${d.name}</div>
+      <div class="muted" style="font-size:13px;margin-top:2px;">${spec.name} · ${d.exp} years experience</div>
+      <div class="row gap8" style="justify-content:center;margin-top:10px;">
+        <span class="badge badge-teal">${ic.check} Verified</span>
+        <span class="badge ${d.status==='Available'?'badge-green':'badge-gold'}"><span class="dot ${d.status==='Available'?'dot-green':'dot-gold'}"></span> ${d.status}</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="grid3 mb14">
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:15px;">${d.rating}★</div><div class="muted" style="font-size:10px;">${d.reviews} reviews</div></div>
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:15px;">₹${d.fee}</div><div class="muted" style="font-size:10px;">consult fee</div></div>
+        <div class="card center" style="padding:12px;"><div class="mono" style="font-weight:700;font-size:15px;">${d.exp}y</div><div class="muted" style="font-size:10px;">experience</div></div>
+      </div>
+      <div class="eyebrow mb6">About</div>
+      <div class="muted" style="font-size:13px;line-height:1.6;margin-bottom:18px;">${d.name} is a board-certified ${spec.name.toLowerCase()} focused on attentive, patient-first care, available for both instant and scheduled consultations.</div>
+      <div class="col gap10">
+        <button class="btn btn-primary" onclick="S.doctorId='${d.id}';S.consultMode='instant';go('consultRoom',{id:'${d.id}'})" ${d.status!=='Available'?'disabled':''}>${ic.bolt} Instant Consultation</button>
+        <button class="btn btn-secondary" onclick="S.doctorId='${d.id}';S.consultMode='booked';bookAppointment('${d.id}')">${ic.cal} Book Appointment</button>
+      </div>
+    </div>
+  `;
+  return withoutNav(topbar('Doctor profile','', true) + body);
+};
+function bookAppointment(id){
+  pushNotification('Appointment booked', 'Your appointment request has been sent to the doctor.');
+  showToastSafe('Appointment requested for tomorrow, 10:30 AM');
+  setTimeout(()=>go('doctorProfile',{id}), 650);
+}
+
+SCREENS.consultRoom = (p) => {
+  const specId = p.id.split('-')[0];
+  const d = genDoctors(specId).find(x=>x.id===p.id);
+  const body = `
+    <div style="height:100%;background:linear-gradient(160deg,#0E2E29,#193F38);display:flex;flex-direction:column;color:#fff;">
+      <div class="row space-between" style="padding:18px 20px;">
+        <span class="badge badge-red" style="background:rgba(214,69,69,.25);color:#ffb3ab;">● Live · 03:42</span>
+        <button class="back" style="background:rgba(255,255,255,.12);" onclick="goBack()">${ic.close}</button>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div class="avatar round" style="width:104px;height:104px;font-size:34px;background:rgba(255,255,255,.14);color:#fff;">${d.name[4]}</div>
+        <div style="font-weight:700;margin-top:16px;font-size:16px;">${d.name}</div>
+        <div style="opacity:.7;font-size:12.5px;margin-top:3px;">${S.consultMode==='instant'?'Instant consultation':'Scheduled appointment'} · ${SPECIALTIES.find(s=>s.id===specId).name}</div>
+        <div style="margin-top:10px;padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.1);font-size:11px;">You: ${S.user.name}</div>
+      </div>
+      <div class="row gap14" style="justify-content:center;padding:26px 20px 34px;">
+        <button class="ai-icon-btn" style="width:52px;height:52px;background:rgba(255,255,255,.12);border:none;color:#fff;" title="Chat">${ic.chat}</button>
+        <button class="ai-icon-btn" style="width:52px;height:52px;background:rgba(255,255,255,.12);border:none;color:#fff;" title="Audio">${ic.phoneCall}</button>
+        <button class="ai-icon-btn" style="width:52px;height:52px;background:rgba(255,255,255,.12);border:none;color:#fff;" title="Video">${ic.video}</button>
+        <button class="ai-icon-btn" style="width:62px;height:52px;border-radius:26px;background:var(--red);border:none;color:#fff;" onclick="endConsult('${p.id}')">${ic.close}</button>
+      </div>
+    </div>
+  `;
+  return withoutNav(body, {fab:false});
+};
+function endConsult(id){
+  pushNotification('Digital prescription ready', 'Your doctor has shared a digital prescription.');
+  goRoot('prescription', {id});
+}
+
+SCREENS.prescription = (p) => {
+  const specId = p.id.split('-')[0];
+  const d = genDoctors(specId).find(x=>x.id===p.id) || genDoctors(specId)[0];
+  const spec = SPECIALTIES.find(s=>s.id===specId);
+  const body = `
+    <div class="pad center" style="padding-bottom:6px;">
+      <div class="avatar round" style="margin:0 auto;background:var(--green-pale);color:var(--green);">${ic.check}</div>
+      <div class="h-display mt10" style="font-size:19px;">Consultation complete</div>
+      <div class="muted" style="font-size:12.5px;margin-top:2px;">Your digital prescription is ready</div>
+    </div>
+    <div class="section">
+      <div class="card">
+        <div class="row space-between mb10">
+          <div><div style="font-weight:700;font-size:14px;">Digital Prescription</div><div class="muted mono" style="font-size:10.5px;">RX-${p.id.toUpperCase()}-${new Date().getDate()}</div></div>
+          <div class="avatar sm">${ic.file}</div>
+        </div>
+        ${pulseDivider()}
+        <div class="muted" style="font-size:12px;">${d.name} · ${spec.name}</div>
+        <div class="col gap8 mt10">
+          <div class="row space-between" style="font-size:13px;"><span>Paracetamol 500mg</span><span class="muted">1-0-1, 5 days</span></div>
+          <div class="row space-between" style="font-size:13px;"><span>Cetirizine 10mg</span><span class="muted">0-0-1, 3 days</span></div>
+        </div>
+      </div>
+      <div class="btn-block-row mt14">
+        <button class="btn btn-secondary btn-sm" onclick="showToastSafe('Prescription downloaded (PDF)')">${ic.upload} Download</button>
+        <button class="btn btn-secondary btn-sm" onclick="showToastSafe('Prescription saved to profile')">${ic.file} Save</button>
+        <button class="btn btn-secondary btn-sm" onclick="showToastSafe('Share sheet opened')">${ic.chat} Share</button>
+      </div>
+      <button class="btn btn-primary mt18" onclick="goRoot('patientHome')">Back to Home</button>
+    </div>
+  `;
+  return withoutNav(topbar('Prescription','', true) + body);
+};
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+goRoot('splash');
+</script>
+</body>
+</html>
 
